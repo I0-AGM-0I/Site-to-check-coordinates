@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folder Upload & Coordinates</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="d-flex align-items-center justify-content-center vh-100">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 text-center">
+                <p class="mb-3">Upload a folder containing images</p>
+                <input type="file" class="form-control mb-2" id="folderInput" webkitdirectory directory multiple>
+                <ul id="fileList" class="list-group mt-3"></ul>
+            </div>
+            <div class="col-md-8 text-center">
+                <div id="imageContainer" class="mt-3 d-none">
+                    <p>Select an image to display:</p>
+                    <select id="imageSelect" class="form-control mb-2"></select>
+                    <div class="d-flex justify-content-center">
+                        <img id="uploadedImage" class="img-fluid border d-none" 
+                             style="cursor: crosshair; max-width: 100%; height: auto;" />
+                    </div>
+                    <p id="coordinates" class="mt-2 text-info"></p>
+                    <button id="saveCoordinates" class="btn btn-success mt-2 d-none">Save Coordinates</button>
+                    <ul id="coordinatesList" class="list-group mt-3"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let imageFiles = {}; // Object to store images
+        let storedCoordinates = [];
+
+        document.getElementById("folderInput").addEventListener("change", function(event) {
+            const fileList = document.getElementById("fileList");
+            const imageSelect = document.getElementById("imageSelect");
+            const imageContainer = document.getElementById("imageContainer");
+
+            fileList.innerHTML = "";
+            imageSelect.innerHTML = '<option value="" disabled selected>Select an image</option>';
+            imageFiles = {}; // Reset files
+
+            Array.from(event.target.files).forEach((file) => {
+                if (file.type.startsWith("image/")) {
+                    imageFiles[file.name] = file;
+
+                    let listItem = document.createElement("li");
+                    listItem.className = "list-group-item";
+                    listItem.innerText = file.name;
+                    fileList.appendChild(listItem);
+
+                    let option = document.createElement("option");
+                    option.value = file.name;
+                    option.innerText = file.name;
+                    imageSelect.appendChild(option);
+                }
+            });
+
+            if (Object.keys(imageFiles).length > 0) {
+                imageContainer.classList.remove("d-none");
+            }
+        });
+
+        document.getElementById("imageSelect").addEventListener("change", function() {
+            let selectedFileName = this.value;
+            if (selectedFileName) displayImage(selectedFileName);
+        });
+
+        function displayImage(fileName) {
+            const uploadedImage = document.getElementById("uploadedImage");
+            const coordinatesList = document.getElementById("coordinatesList");
+            const coordinatesText = document.getElementById("coordinates");
+            const saveCoordinatesBtn = document.getElementById("saveCoordinates");
+
+            storedCoordinates = [];
+            coordinatesList.innerHTML = "";
+            coordinatesText.innerText = "";
+            saveCoordinatesBtn.classList.add("d-none");
+
+            const file = imageFiles[fileName];
+            if (!file) {
+                alert("Image not found. Please try again.");
+                return;
+            }
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedImage.src = e.target.result;
+                uploadedImage.classList.remove("d-none");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        document.getElementById("uploadedImage").addEventListener("click", function(event) {
+            const img = event.target;
+            const rect = img.getBoundingClientRect();
+            
+            const x = Math.round((event.clientX - rect.left) * (img.naturalWidth / img.width));
+            const y = Math.round((event.clientY - rect.top) * (img.naturalHeight / img.height));
+            
+            storedCoordinates.push({ x, y });
+
+            document.getElementById("coordinates").innerText = `Coordinates: (X: ${x}, Y: ${y})`;
+            document.getElementById("saveCoordinates").classList.remove("d-none");
+        });
+
+        document.getElementById("saveCoordinates").addEventListener("click", function() {
+            const coordinatesList = document.getElementById("coordinatesList");
+            coordinatesList.innerHTML = "";
+            storedCoordinates.forEach((coord, index) => {
+                let listItem = document.createElement("li");
+                listItem.className = "list-group-item";
+                listItem.innerText = `Point ${index + 1}: X = ${coord.x}, Y = ${coord.y}`;
+                coordinatesList.appendChild(listItem);
+            });
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
